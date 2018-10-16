@@ -7,6 +7,22 @@ from framedSock import FramedStreamSock
 from threading import Thread
 import time
 
+#Method to get infromation from the file
+def readFile():
+  #While not valid fail
+  while (1):
+    try:
+      filename = input("Input filename: \n")
+      f = open(filename,'r')
+      break
+    except IOError: #Send error keep asking
+      print("File doesn't exist.")
+
+  fileInfo = f.read()#.replace("\n", "\0")
+  f.close()
+  fileInfo = filename+"//sep"+fileInfo+'\n' #Concatination to identify file
+  return fileInfo
+
 switchesVarDefaults = (
     (('-s', '--server'), 'server', "localhost:50001"),
     (('-d', '--debug'), "debug", False), # boolean (set if present)
@@ -35,6 +51,7 @@ class ClientThread(Thread):
         Thread.__init__(self, daemon=False)
         self.serverHost, self.serverPort, self.debug = serverHost, serverPort, debug
         self.start()
+
     def run(self):
        s = None
        for res in socket.getaddrinfo(serverHost, serverPort, socket.AF_UNSPEC, socket.SOCK_STREAM):
@@ -63,13 +80,11 @@ class ClientThread(Thread):
        fs = FramedStreamSock(s, debug=debug)
 
 
-       print("sending hello world")
-       fs.sendmsg(b"hello world")
-       print("received:", fs.receivemsg())
+       text = readFile()
+       fs.sendmsg(text.encode())
+       print("Recived: " + fs.receivemsg().decode("utf-8"))
 
-       fs.sendmsg(b"hello world")
-       print("received:", fs.receivemsg())
 
-for i in range(100):
-    ClientThread(serverHost, serverPort, debug)
+for i in range(2):
+  ClientThread(serverHost, serverPort, debug)
 
